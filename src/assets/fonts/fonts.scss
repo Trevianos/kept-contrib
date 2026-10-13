@@ -1,26 +1,17 @@
+// Kept Sans is a Latin-script subset of Google Sans v14.000 (SIL OFL 1.1).
+// Both files retain the 400-700 weight axis and cover the required Latin text.
 @font-face {
-  font-family: "Google Sans";
-  src: url("1.woff2") format("woff2");
-  font-weight: normal;
+  font-family: "Kept Sans";
+  src: url("KeptSans.woff2") format("woff2");
   font-style: normal;
+  font-weight: 400 700;
   font-display: swap;
-  font-weight: 400;
 }
 
 @font-face {
-  font-family: "Google Sans Light 1";
-  src: url("2.woff2") format("woff2");
-  font-weight: normal;
-  font-style: normal;
+  font-family: "Kept Sans";
+  src: url("KeptSans-Italic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 400 700;
   font-display: swap;
-  font-weight: 400;
-}
-
-@font-face {
-  font-family: "Google Sans Light 2";
-  src: url("3.woff2") format("woff2");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-  font-weight: 400;
 }
