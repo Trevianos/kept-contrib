@@ -15,3 +15,11 @@
 - Check desktop/mobile, light/dark themes, click-away closing, account roles, and logout.
 
 This file seeds the branch for a **draft PR and screenshots before implementation**. Codex should implement and test the changes in this branch, preserving or updating this document.
+
+## Implemented and automated validation
+
+- Avatar navigation now contains only Users (admin), Settings, and Sign out.
+- Settings starts with Profile and reuses the existing self-profile/password APIs and session updates.
+- Duplicate navigation and obsolete profile-menu styles/handlers were removed; mobile theme switching remains.
+- Production build and 15 Angular regression tests passed. Tests cover role-based navigation, route guards, menu closing, logout, avatar resizing/removal, profile saving, and password validation/errors.
+- Authenticated end-to-end checks and manual desktop/mobile light/dark visual review remain pending on the isolated kept-test instance on VM 104. No deployment was performed.

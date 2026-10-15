@@ -784,3 +784,19 @@ h1 { margin-bottom: 0; }
   .permission-desc { color: #5f6368; }
   .permission-granted { color: #1e8e3e; }
 }
+
+.profile-section {
+  .profile-avatar-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+  .profile-preview {
+    display: block; position: relative; width: 80px; height: 80px; cursor: pointer;
+    img, .large { display: block; width: 80px; height: 80px; border-radius: 50%; object-fit: cover; }
+    input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+    &:focus-within { outline: 2px solid #fbbc04; outline-offset: 4px; }
+    .avatar-change-indicator { display: block; text-align: center; margin-top: 4px; }
+  }
+  .profile-field, .pw-reset-form { display: grid; gap: 8px; }
+  .password-reset-section, .pw-reset-form, .profile-actions { margin-top: 16px; }
+  .profile-error { color: #f28b82; }
+  input { box-sizing: border-box; width: 100%; min-width: 0; }
+}
+:host-context(body.light-theme) .profile-section .profile-error { color: #b3261e; }

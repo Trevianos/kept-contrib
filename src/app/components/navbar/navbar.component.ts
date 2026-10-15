@@ -39,18 +39,8 @@ export class NavbarComponent implements OnInit {
   @ViewChild("filtersContainer") filtersContainer?: ElementRef<HTMLElement>
   @HostBinding('class.scrolled') isScrolled = false
   isProfileOpen = false
-  profileError = ''
   labelMenuError = ''
   binderMenuError = ''
-  avatarPreview = ''
-  avatarPresetPreview = 'cat'
-  newPassword = ''
-  confirmNewPassword = ''
-  currentPassword = ''
-  passwordResetError = ''
-  passwordResetSuccess = ''
-  isResettingPassword = false
-  showPasswordReset = false
   isFiltersOpen = false
   bgColors = bgColors
   bgImages = bgImages
@@ -355,9 +345,6 @@ export class NavbarComponent implements OnInit {
   }
 
   openProfile() {
-    this.profileError = ''
-    this.avatarPreview = this.auth.currentUser?.avatarDataUrl || ''
-    this.avatarPresetPreview = this.auth.currentUser?.avatarPreset || 'cat'
     this.isProfileOpen = true
   }
 
@@ -386,113 +373,9 @@ export class NavbarComponent implements OnInit {
     }
   }
 
+  @HostListener('document:keydown.escape')
   closeProfile() {
     this.isProfileOpen = false
-  }
-
-  uploadAvatar(event: Event) {
-    const input = event.target as HTMLInputElement
-    const file = input.files?.[0]
-    this.profileError = ''
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      this.profileError = 'Please choose an image file.'
-      return
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 512;
-        const MAX_HEIGHT = 512;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-          const quality = mimeType === 'image/jpeg' ? 0.85 : undefined;
-          this.avatarPreview = canvas.toDataURL(mimeType, quality);
-        } else {
-          this.avatarPreview = String(reader.result || '');
-        }
-        this.cdr.detectChanges();
-      };
-      img.src = String(e.target?.result || '');
-    };
-    reader.readAsDataURL(file);
-  }
-
-  clearAvatar() {
-    this.avatarPreview = ''
-    const presets = ['cat', 'fox', 'bunny', 'bear', 'panda', 'guinea-pig', 'capybara'];
-    const otherPresets = presets.filter(p => p !== this.avatarPresetPreview);
-    this.avatarPresetPreview = otherPresets[Math.floor(Math.random() * otherPresets.length)];
-  }
-
-  openAdvancedSettings() {
-    this.closeProfile()
-    this.router.navigateByUrl('/settings')
-  }
-
-  async saveProfile(displayName: string) {
-    try {
-      await this.auth.updateProfile(displayName, this.avatarPreview, this.avatarPresetPreview)
-      this.closeProfile()
-    } catch (error: any) {
-      this.profileError = error?.error?.error || 'Could not save profile.'
-    }
-  }
-
-  togglePasswordReset() {
-    this.showPasswordReset = !this.showPasswordReset
-    this.currentPassword = ''
-    this.newPassword = ''
-    this.confirmNewPassword = ''
-    this.passwordResetError = ''
-    this.passwordResetSuccess = ''
-  }
-
-  async resetMyPassword() {
-    this.passwordResetError = ''
-    this.passwordResetSuccess = ''
-    if (this.newPassword.length < 8) {
-      this.passwordResetError = 'New password must be at least 8 characters.'
-      return
-    }
-    if (this.newPassword !== this.confirmNewPassword) {
-      this.passwordResetError = 'Passwords do not match.'
-      return
-    }
-    this.isResettingPassword = true
-    try {
-      await this.auth.resetOwnPassword(this.currentPassword, this.newPassword)
-      this.passwordResetSuccess = 'Password updated successfully.'
-      this.currentPassword = ''
-      this.newPassword = ''
-      this.confirmNewPassword = ''
-    } catch (error: any) {
-      this.passwordResetError = error?.error?.error || 'Could not reset password.'
-    } finally {
-      this.isResettingPassword = false
-    }
   }
 
   onLogoClick(event: Event) {
