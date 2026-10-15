@@ -18,8 +18,7 @@
       <h2 class="group-title color-blue"><span class="material-symbols-outlined" aria-hidden="true">person</span>Profile</h2>
       <div class="auth-form">
         <div class="profile-avatar-row">
-          <label class="profile-preview" aria-label="Change avatar">
-            <input type="file" aria-label="Change avatar" accept="image/*" (change)="uploadAvatar($event)">
+          <div class="profile-preview">
             @if (avatarPreview) {
               <img [src]="avatarPreview" alt="Avatar preview">
             } @else {
@@ -27,11 +26,18 @@
                 <span class="head"><i></i></span>
               </div>
             }
-            <span class="avatar-change-indicator">Change</span>
-          </label>
-          <button type="button" class="remove-avatar-btn H pop" data-pop="Remove photo" aria-label="Remove photo" (click)="clearAvatar()">
-            <span class="material-symbols-outlined">delete</span>
-          </button>
+          </div>
+          <div class="profile-photo-actions">
+            <input #avatarFile class="profile-file-input" type="file" accept="image/*" (change)="uploadAvatar($event)" hidden>
+            <button type="button" class="btn-secondary" (click)="avatarFile.click()">
+              <span class="material-symbols-outlined" aria-hidden="true">add_a_photo</span>
+              Change photo
+            </button>
+            <button type="button" class="btn-secondary remove-avatar-btn" (click)="clearAvatar()">
+              <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+              Remove photo
+            </button>
+          </div>
         </div>
         <label class="profile-field">
           <span>Display name</span>
@@ -41,9 +47,9 @@
           <div class="profile-error">{{profileError}}</div>
         }
         <div class="password-reset-section">
-          <button class="pw-reset-toggle" type="button" (click)="togglePasswordReset()">
-            <span class="material-symbols-outlined">lock_reset</span>
-            {{showPasswordReset ? 'Cancel password reset' : 'Reset password'}}
+          <button class="btn-secondary pw-reset-toggle" type="button" (click)="togglePasswordReset()">
+            <span class="material-symbols-outlined" aria-hidden="true">lock_reset</span>
+            {{showPasswordReset ? 'Cancel password change' : 'Change password'}}
           </button>
           @if (showPasswordReset) {
             <div class="pw-reset-form">
@@ -65,7 +71,7 @@
               @if (passwordResetSuccess) {
                 <div class="pw-feedback success">{{passwordResetSuccess}}</div>
               }
-              <button class="pw-save" type="button" [disabled]="isResettingPassword || !currentPassword || !newPassword || !confirmNewPassword" (click)="resetMyPassword()">
+              <button class="btn-secondary pw-save" type="button" [disabled]="isResettingPassword || !currentPassword || !newPassword || !confirmNewPassword" (click)="resetMyPassword()">
                 {{isResettingPassword ? 'Updating...' : 'Update password'}}
               </button>
             </div>
@@ -73,7 +79,7 @@
         </div>
         @if (profileSuccess) { <div class="success" role="status">{{profileSuccess}}</div> }
         <div class="profile-actions">
-          <button class="primary" type="button" (click)="saveProfile(displayNameInput.value)">Save</button>
+          <button class="primary" type="button" (click)="saveProfile(displayNameInput.value)">Save changes</button>
         </div>
       </div>
     </section>

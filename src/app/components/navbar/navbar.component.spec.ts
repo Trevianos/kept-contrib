@@ -61,6 +61,29 @@ describe('Avatar navigation', () => {
     expect(fixture.componentInstance.isProfileOpen).toBeFalse();
   });
 
+  it('uses the navigation font and aligned icons in both themes', () => {
+    const fixture = TestBed.createComponent(NavbarComponent);
+    fixture.componentInstance.isProfileOpen = true;
+    fixture.detectChanges();
+    const wasLight = document.body.classList.contains('light-theme');
+    try {
+      for (const light of [false, true]) {
+        document.body.classList.toggle('light-theme', light);
+        const item = fixture.nativeElement.querySelector('#user-menu a');
+        const style = getComputedStyle(item);
+        expect(style.fontFamily).toContain('Google Sans');
+        expect(style.fontSize).toBe('14px');
+        expect(style.fontWeight).toBe('500');
+        expect(style.alignItems).toBe('center');
+        const icon = getComputedStyle(item.querySelector('.material-symbols-outlined'));
+        expect(icon.fontSize).toBe('20px');
+        expect(icon.color).toBe(style.color);
+      }
+    } finally {
+      document.body.classList.toggle('light-theme', wasLight);
+    }
+  });
+
   it('uses the existing logout and navigates to login', async () => {
     const fixture = TestBed.createComponent(NavbarComponent);
     const navigate = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);

@@ -1,3 +1,11 @@
+import { CommonModule } from '@angular/common';
+import { TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
+import { RouterTestingModule } from '@angular/router/testing';
+import { ReminderService } from '../../services/reminder.service';
+import { NotesService } from '../../services/notes.service';
+import { PushNotificationService } from '../../services/push-notification.service';
+import { UserPreferencesService } from '../../services/user-preferences.service';
 import { SettingsComponent } from './settings.component';
 import { AuthService } from '../../services/auth.service';
 import { AdminGuard, AuthGuard } from '../../services/auth.guard';
@@ -110,4 +118,56 @@ describe('Profile navigation access guards', () => {
     await new AdminGuard(auth, router).canActivate();
     expect(router.createUrlTree).toHaveBeenCalledWith(['/login']);
   });
+});
+
+describe('Profile presentation', () => {
+  beforeEach(async () => {
+    // Render the real template/styles without making unrelated Settings API requests.
+    spyOn(SettingsComponent.prototype, 'ngOnInit').and.resolveTo();
+    await TestBed.configureTestingModule({
+      imports: [CommonModule, FormsModule, RouterTestingModule],
+      declarations: [SettingsComponent],
+      providers: [
+        { provide: AuthService, useValue: { currentUser: { displayName: 'Alice' } } },
+        { provide: ReminderService, useValue: {} },
+        { provide: NotesService, useValue: {} },
+        { provide: PushNotificationService, useValue: {} },
+        { provide: UserPreferencesService, useValue: {} }
+      ]
+    }).compileComponents();
+  });
+
+  for (const light of [false, true]) {
+    it(`keeps icons legible and actions secondary in ${light ? 'light' : 'dark'} theme`, () => {
+      const wasLight = document.body.classList.contains('light-theme');
+      document.body.classList.toggle('light-theme', light);
+      try {
+        const fixture = TestBed.createComponent(SettingsComponent);
+        fixture.detectChanges();
+        const section = fixture.nativeElement.querySelector('.profile-section');
+        const actions = section.querySelectorAll('button.btn-secondary');
+        expect(actions.length).toBe(3);
+        for (const button of Array.from(actions) as HTMLButtonElement[]) {
+          const style = getComputedStyle(button);
+          const icon = getComputedStyle(button.querySelector('.material-symbols-outlined')!);
+          expect(icon.color).toBe(style.color);
+          expect(icon.fontSize).toBe('20px');
+          expect(style.color).toBe(light ? 'rgb(32, 33, 36)' : 'rgb(232, 234, 237)');
+          expect(style.backgroundColor).toBe('rgba(0, 0, 0, 0)');
+          expect(style.borderTopStyle).toBe('solid');
+        }
+        const save = section.querySelector('.primary');
+        expect(save.textContent.trim()).toBe('Save changes');
+        expect(getComputedStyle(save.parentElement).justifyContent).toBe('flex-end');
+        expect(getComputedStyle(section.querySelector('.profile-photo-actions')).flexWrap).toBe('wrap');
+        expect(getComputedStyle(section.querySelector('.profile-file-input')).display).toBe('none');
+        const picker = section.querySelector('.profile-file-input');
+        const choose = spyOn(picker, 'click');
+        actions[0].click();
+        expect(choose).toHaveBeenCalled();
+      } finally {
+        document.body.classList.toggle('light-theme', wasLight);
+      }
+    });
+  }
 });
