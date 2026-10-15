@@ -177,11 +177,6 @@ export class NavComponent implements OnInit, AfterViewInit, OnDestroy {
     this.onNavItemClick()
   }
 
-  async logout() {
-    await this.auth.logout()
-    this.router.navigateByUrl('/login')
-    this.onNavItemClick()
-  }
 
 
   openInstallPwa() {

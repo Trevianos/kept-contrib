@@ -784,3 +784,38 @@ h1 { margin-bottom: 0; }
   .permission-desc { color: #5f6368; }
   .permission-granted { color: #1e8e3e; }
 }
+
+.profile-section {
+  .profile-avatar-row, .profile-photo-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .profile-avatar-row { gap: 20px; }
+  .profile-preview {
+    flex-shrink: 0;
+    width: 80px;
+    height: 80px;
+    img, .large { display: block; width: 80px; height: 80px; border-radius: 50%; object-fit: cover; }
+  }
+  .profile-field, .pw-reset-form { display: grid; gap: 8px; }
+  .password-reset-section, .pw-reset-form { margin-top: 16px; }
+  .profile-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    height: auto;
+    padding: 10px 16px;
+    line-height: 20px;
+    &:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+    .material-symbols-outlined { color: inherit; font-size: 20px; line-height: 1; flex-shrink: 0; }
+  }
+  .primary:hover { filter: brightness(0.95); }
+  .profile-error { color: #f28b82; }
+  input { box-sizing: border-box; width: 100%; min-width: 0; }
+}
+:host-context(body.light-theme) .profile-section .profile-error { color: #b3261e; }
