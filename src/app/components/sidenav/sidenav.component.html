@@ -32,7 +32,7 @@
 
   <div class="sidenav-binders">
     @for (binder of Shared.binder.list; track binder.name) {
-      <div [class.active]="router.url === '/binder/'+binder.name" class="item is-binder"
+      <div routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="item is-binder"
         (click)="onNavItemClick()"
         [title]="binder.name"
         [routerLink]="['/binder', binder.name]">
@@ -55,7 +55,7 @@
   <div class="sidenav-labels-wrap" [class.can-scroll-up]="canScrollUp" [class.can-scroll-down]="canScrollDown">
     <div #labelsScroll class="sidenav-labels" (scroll)="onLabelsScroll()">
       @for (label of Shared.label.list; track label) {
-        <div [class.active]="router.url === '/label/'+label.name" class="item is-label"
+        <div routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="item is-label"
           (click)="onNavItemClick()"
           [title]="label.name"
           [routerLink]="['/label', label.name]">
