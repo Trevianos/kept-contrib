@@ -37,3 +37,16 @@ Link preview cards use fixed colors for title, domain, and action buttons (inclu
 | Both | Open note editor | Link/attachment styling still readable; no regressions |
 
 Include screenshots before and after implementation. Automated checks and authenticated staging verification to be recorded in the PR.
+
+
+## Implementation validation (2026-10-15)
+
+- Cards pass `noteTextColor(note)` through `--note-ink` on colored/image surfaces. Uncolored surfaces keep theme defaults. The editor uses its existing equivalent foreground selection and clears contrast metadata on reset; external background updates refresh it too.
+- Scoped overrides cover action masks, active alarm underline, current/past reminder chips and clock images, attachment metadata/actions, and link controls. Link previews use inherited variables with existing defaults outside these surfaces.
+- Run the CSS regression fixture with `node --test test-fixtures/note-contrast.test.cjs`. Requires `sass`, Angular compiler, Playwright (resolvable directly or through `NODE_PATH`), and installed Microsoft Edge. No dependency or lockfile changes are required by the application.
+- Fixture passed: 32 combinations (2 themes x 8 backgrounds x card/editor), with pastel yellow/mint/lavender, dark red/navy/green, neutral and bundled groceries image. Checks computed foreground colors, palette text contrast >= 4.5:1, reminder hover, disabled opacity and unchanged toolbar styling outside notes. Uses Angular CSS encapsulation. This is a CSS fixture, not an authenticated Angular application test.
+- `npm run build`: passed, including PurgeCSS; existing Sass import deprecation warnings remain. Font inlining required network access to Google Fonts.
+- `npm run test:reminders`: 10 passed. `npm run test:native`: passed.
+- `npm run test:mcp`: 21 passed, 2 failed (`oidc-link`, `remote-oauth`); both processes abort in Node's `InternalCallbackScope::Close` with `execution_async_id` assertion. Reproduced with those two files alone and `--test-concurrency=1`.
+- `npm run test:sync`: assertions passed, process exited 1 during temporary SQLite cleanup (`EPERM` on Windows); reproduced twice. `git diff --check`: passed.
+- Still requires manual verification on isolated `kept-test`: actual rendered cards/editor, screenshots before/after, touch/selection behavior, real link thumbnails, attachment download/remove, reminder interaction, and arbitrary image content. Image fixture checks CSS inheritance only; it does not establish pixel contrast across an image. Existing dark-text policy for image backgrounds remains unchanged.
