@@ -10,7 +10,7 @@ Prepare a **self-buildable, maintainable** personal edition of Kept by combining
 - Original upstream: `ericerkz/kept`.
 - Owner's fork: `Trevianos/kept-contrib`, expected remote `contrib`.
 - Reference branch in fork: `personal/customizations`. Its `personal-reference/` contains the **actual** historic production Dockerfile and UUID polyfill, and a file inventory. It is not a production-ready build.
-- Binary branding may be supplied locally as `kept-branding-assets.zip`; import the **exact** five files from that zip under `personal-reference/branding/` and confirm their SHA-256 checksums against `personal-reference/README.md`. If absent, continue only with safe non-branding work and report BLOCKED for production completeness. Do not invent artwork.
+- Binary branding may be supplied locally as `kept-branding-assets.zip`; import the **exact** five files from that zip under `personal-reference/branding/` and confirm their SHA-256 checksums against `personal-reference/README.md`. If absent, continue only with safe non-branding work and report BLOCKED for production completeness. Do not invent artwork. **Never commit the ZIP itself**; commit only its five verified files to the integration branch, and keep the original ZIP outside tracked paths or delete it after extraction.
 - Current production container used image `kept-fontfix:local`, with persistent data outside the image. Its actual instance must remain untouched.
 - Six PRs in the fork, each based initially on upstream `master` commit `50619c520c2506ad351a43e25e3183ba6847a291`:
   1. #93 `fix/pinned-icon-outline` (`650a850c6e7fb4da33133a2bbb000b716dd09b81`)
