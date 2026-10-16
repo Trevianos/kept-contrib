@@ -1,4 +1,6 @@
 FROM node:24-alpine AS builder
+# sqlite3 may need to compile when an Alpine/musl prebuilt addon is unavailable.
+RUN apk add --no-cache python3 make g++
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --loglevel=error
@@ -11,10 +13,12 @@ WORKDIR /app
 # su-exec is a small (~30 KB) replacement for gosu used to drop privileges
 # from root to the unprivileged "node" user after the entrypoint has fixed
 # bind-mount ownership.
-RUN apk add --no-cache su-exec
+RUN apk add --no-cache su-exec libstdc++
 
 COPY --from=builder /app/package*.json ./
-RUN npm ci --omit=dev --loglevel=error
+RUN apk add --no-cache --virtual .node-gyp-build python3 make g++ \
+    && npm ci --omit=dev --loglevel=error \
+    && apk del .node-gyp-build
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/mcp ./mcp
 COPY --from=builder /app/dist ./dist
