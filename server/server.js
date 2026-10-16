@@ -8161,7 +8161,20 @@ async function readZipEntries(filePath) {
         isDirectory: file.type === 'Directory' || /\/$/.test(file.path),
         _file: file
       }));
-      getRawData = (entry) => entry._file.buffer();
+      // The fallback must enforce the same cap while streaming, before a ZIP
+      // bomb can allocate an unbounded buffer. buffer() checks too late.
+      getRawData = async (entry) => {
+        const chunks = [];
+        let size = 0;
+        for await (const chunk of entry._file.stream()) {
+          size += chunk.length;
+          if (size > TAKEOUT_MAX_PER_ENTRY_BYTES || totalExtracted + size > TAKEOUT_MAX_TOTAL_BYTES) {
+            throw new Error('ZIP expands beyond the safe extraction limit (zip bomb).');
+          }
+          chunks.push(chunk);
+        }
+        return Buffer.concat(chunks, size);
+      };
     } catch (error) {
       console.error('Takeout ZIP parse error:', admZipError?.message || admZipError, error?.message || error);
       throw new Error('Invalid ZIP file. Upload the Google Takeout ZIP itself, with the stock Takeout/Keep folder inside it.');
@@ -8174,16 +8187,25 @@ async function readZipEntries(filePath) {
 
   let totalExtracted = 0;
   const entries = [];
+  const entryNames = new Set();
   for (const raw of rawEntries) {
     const rawName = raw.entryName ?? raw.path ?? '';
     const normalized = normalizeZipEntryName(rawName);
     if (isUnsafeZipPath(normalized)) {
       throw new Error('ZIP contains an unsafe entry path. Aborting.');
     }
+    // adm-zip rejects duplicates; do not let the compatibility fallback bypass
+    // that protection, including names that normalize to the same path.
+    if (entryNames.has(normalized)) throw new Error('ZIP contains duplicate entry names. Aborting.');
+    entryNames.add(normalized);
     entries.push({
       entryName: normalized,
       isDirectory: !!(raw.isDirectory ?? raw.type === 'Directory'),
       getData: async () => {
+        const declaredSize = raw.header?.size ?? raw._file?.uncompressedSize;
+        if (declaredSize > TAKEOUT_MAX_PER_ENTRY_BYTES || totalExtracted + declaredSize > TAKEOUT_MAX_TOTAL_BYTES) {
+          throw new Error(`Entry "${normalized}" is too large (declared ZIP size).`);
+        }
         const data = await getRawData(raw);
         if (!data) return Buffer.alloc(0);
         if (data.length > TAKEOUT_MAX_PER_ENTRY_BYTES) {
