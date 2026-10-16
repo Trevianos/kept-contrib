@@ -76,7 +76,7 @@
         (click)="onNavItemClick()"
         [title]="label.name"
         [routerLink]="['/label', label.name]">
-        <span class="label-color-dot" [style.background-color]="Shared.labelColor(label)" aria-hidden="true"></span>
+        <span class="label-color-dot" appLabelAppearance="sidebar" [labelColor]="Shared.labelColor(label)" aria-hidden="true"></span>
         <span class="text">{{label.name}}</span>
         <span class="label-abbr" aria-hidden="true">{{compactLabel(label.name)}}</span>
       </div>

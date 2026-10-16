@@ -64,3 +64,15 @@
 
     }
 }
+
+// Only actual Labels become colored chips; other metadata chips retain their style.
+.labels-container .label-container.label-color-chip {
+    background-image: none;
+    box-shadow: none;
+
+    .label .cancel-icon {
+        background-color: currentColor;
+        opacity: 1;
+        &:hover { background-color: currentColor; opacity: 1; }
+    }
+}

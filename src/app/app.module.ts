@@ -1,3 +1,4 @@
+import { LabelAppearanceDirective } from './directives/label-appearance.directive';
 import { LabelColorPickerComponent } from './components/label-color-picker/label-color-picker.component';
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
@@ -29,6 +30,7 @@ import { ConnectionHeadersInterceptor } from './services/connection-headers.inte
 @NgModule({ declarations: [
         AppComponent,
         LabelColorPickerComponent,
+        LabelAppearanceDirective,
         MainComponent,
         NavComponent,
         NavbarComponent,

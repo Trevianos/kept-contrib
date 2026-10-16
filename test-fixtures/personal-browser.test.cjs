@@ -95,7 +95,17 @@ test('built app: insecure HTTP note save, both themes, local fonts and native HT
     await floating.waitFor({ state: 'hidden' });
     await selectBody();
     await floating.waitFor();
-    await page.locator('app-input .text-format-trigger').click();
+    const formatTrigger = page.locator('app-input .text-format-trigger');
+    await formatTrigger.hover();
+    const tooltipAnchor = await formatTrigger.evaluate(el => {
+      const rect = el.getBoundingClientRect(), tip = getComputedStyle(el, '::before');
+      return { position: getComputedStyle(el).position, content: tip.content, left: parseFloat(tip.left), top: parseFloat(tip.top), width: rect.width };
+    });
+    assert.equal(tooltipAnchor.position, 'relative', 'Formatting options remains anchored to its own button');
+    assert.equal(tooltipAnchor.content, '"Formatting options"');
+    assert.ok(Math.abs(tooltipAnchor.left - tooltipAnchor.width / 2) < 1);
+    assert.equal(tooltipAnchor.top, 37);
+    await formatTrigger.click();
     assert.equal(await page.locator('app-input .text-format-toolbar:visible').count(), 1);
     await page.locator('app-input .text-format-trigger').click();
     await floating.waitFor({ state: 'hidden' });

@@ -49,6 +49,7 @@ test('built app: label create, color edit, realtime second client, reload and JS
     const waitColor = async (p, color) => { await p.waitForFunction(({ color }) => { const el = document.querySelector('#sidebar-labels .item[title="Colored work"] .label-color-dot'); return el && getComputedStyle(el).backgroundColor === color; }, { color }); };
     console.log('created blue label');
     await waitColor(page, 'rgb(30, 99, 213)'); await waitColor(second, 'rgb(30, 99, 213)');
+    assert.deepEqual(await dot(page).evaluate(el => { const s = getComputedStyle(el); return [s.width, s.height, s.borderWidth, s.outlineStyle, s.boxShadow]; }), ['12px', '12px', '0px', 'none', 'none']);
     const labels = await api('/labels', 'GET', undefined, login.token);
     const label = labels.find(l => l.name === 'Colored work');
     await api('/notes', 'POST', { noteTitle: 'Color note', bgColor: '#f4b8c9', labels: [{ ...label, added: true }] }, login.token);
@@ -58,10 +59,25 @@ test('built app: label create, color edit, realtime second client, reload and JS
     await waitColor(page, 'rgb(216, 27, 96)'); await waitColor(second, 'rgb(216, 27, 96)');
     await modal.getByText('Done', { exact: true }).click();
     await page.reload(); await waitColor(page, 'rgb(216, 27, 96)');
-    await page.waitForFunction(() => [...document.querySelectorAll('app-notes .label')].some(el => el.textContent.includes('Colored work') && getComputedStyle(el.querySelector('.label-color-dot')).backgroundColor === 'rgb(216, 27, 96)'));
+    await page.waitForFunction(() => [...document.querySelectorAll('app-notes .label')].some(el => el.textContent.includes('Colored work') && getComputedStyle(el.closest('.label-color-chip')).backgroundColor === 'rgb(216, 27, 96)'));
     await page.locator('app-notes .note-container').filter({ hasText: 'Color note' }).locator('.title').click();
-    await page.waitForFunction(() => [...document.querySelectorAll('app-input .label')].some(el => el.textContent.includes('Colored work') && getComputedStyle(el.querySelector('.label-color-dot')).backgroundColor === 'rgb(216, 27, 96)'));
+    await page.waitForFunction(() => [...document.querySelectorAll('app-input .label')].some(el => el.textContent.includes('Colored work') && getComputedStyle(el.closest('.label-color-chip')).backgroundColor === 'rgb(216, 27, 96)'));
+    if (process.env.KEPT_LABEL_SCREENSHOTS) await page.screenshot({ path: path.join(process.env.KEPT_LABEL_SCREENSHOTS, 'label-colored-chip-editor.png') });
+    await page.locator('app-input .more[data-pop="More"]:visible').click();
+    await page.locator('app-input .moreMenu:visible').getByText('Add label', { exact: true }).click();
+    const assignment = page.locator('app-input .labelMenu:visible').getByRole('checkbox', { name: 'Colored work', exact: true });
+    assert.ok((await assignment.boundingBox()).height >= 44);
+    assert.equal(await assignment.locator('.label-color-dot').evaluate(el => getComputedStyle(el).width), '24px');
+    await assignment.focus(); await page.keyboard.press('Space');
+    assert.equal(await assignment.getAttribute('aria-checked'), 'false');
+    await page.keyboard.press('Enter');
+    assert.equal(await assignment.getAttribute('aria-checked'), 'true');
+    await page.locator('app-input .note-title:visible').click();
+
     await page.locator('app-input .close-btn:visible').first().click();
+    await page.locator('app-input .close-btn:visible').waitFor({ state: 'hidden' });
+    if (process.env.KEPT_LABEL_SCREENSHOTS) await page.screenshot({ path: path.join(process.env.KEPT_LABEL_SCREENSHOTS, 'label-colored-chip-cards.png') });
+    assert.equal(await page.locator('app-notes .label-color-chip .label-color-dot').count(), 0);
     for (const width of [360, 1280]) for (const theme of ['light', 'dark']) {
       await page.setViewportSize({ width, height: 900 });
       await page.evaluate(theme => { document.body.classList.toggle('light-theme', theme === 'light');  }, theme);
@@ -71,6 +87,11 @@ test('built app: label create, color edit, realtime second client, reload and JS
       if (width === 360) await picker.tap(); else await picker.click();
       const palette = modal.locator('.palette:popover-open');
       assert.equal(await palette.evaluate(el => getComputedStyle(el).backgroundColor), theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(40, 41, 44)');
+      for (const swatch of await palette.locator('.label-color-dot').all()) {
+        assert.equal(await swatch.evaluate(el => getComputedStyle(el).width), '24px');
+        assert.equal(await swatch.evaluate(el => getComputedStyle(el).borderWidth), '0px');
+        assert.equal(await swatch.evaluate(el => getComputedStyle(el).boxShadow), 'none');
+      }
       const rect = await palette.boundingBox(); assert.ok(rect.x >= 0 && rect.x + rect.width <= width);
       assert.equal(await palette.getByRole('button', { name: 'Pink', exact: true }).getAttribute('aria-pressed'), 'true');
       if (process.env.KEPT_LABEL_SCREENSHOTS) await page.screenshot({ path: path.join(process.env.KEPT_LABEL_SCREENSHOTS, `label-picker-${width}-${theme}.png`) });

@@ -273,8 +273,8 @@
           <div class="labels-container min">
             @for (label of note.labels; track label) {
               @if (label.added) {
-                <div class="label-container">
-                  <div class="label"><span class="label-color-dot" [style.background-color]="Shared.labelColor(label)" aria-hidden="true"></span><span>{{label.name}}</span>
+                <div class="label-container label-color-chip" appLabelAppearance="chip" [labelColor]="Shared.labelColor(label)">
+                  <div class="label"><span>{{label.name}}</span>
                   <div class="cancel-icon pop" data-pop="Remove Label"
                   (click)="removeLabel(note,label)"></div>
                 </div>
@@ -454,7 +454,10 @@
   }
   <div class="label-list-container">
     @for (label of labels; track label) {
-      <div class="label-list" (click)="labelMenu(label)">
+      <div class="label-list" role="checkbox" tabindex="0" [attr.aria-checked]="!!label.added"
+        (keydown.enter)="labelMenu(label); $event.preventDefault(); $event.stopPropagation()"
+        (keydown.space)="labelMenu(label); $event.preventDefault(); $event.stopPropagation()"
+        (click)="labelMenu(label)">
         <div [class.done]='label.added' class="check-icon"></div>
         <span class="label-color-dot" [style.background-color]="Shared.labelColor(label)" aria-hidden="true"></span>
         <div class="label-name">{{label.name}}</div>

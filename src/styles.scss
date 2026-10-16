@@ -3557,20 +3557,25 @@ body app-input .note-main[data-note-ink="#e8eaed"] .mobile-bottom-bar .glyph {
   filter: brightness(0) invert(1) !important;
 }
 
-// Fixed label identity, separated from any note/image with a two-tone ring.
+// Label controls use a larger, unmodified swatch; sidebar size is scoped locally.
 .label-color-dot {
   display: inline-block;
-  flex: 0 0 12px;
-  width: 12px;
-  height: 12px;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  border: 2px solid #fff;
-  box-sizing: content-box;
-  box-shadow: 0 0 0 1px #202124;
-  outline: 1px solid var(--note-ink, currentColor);
-  outline-offset: 1px;
+  border: 0;
+  box-shadow: none;
+  outline: none;
   margin: 0 8px 0 2px;
   vertical-align: middle;
+}
+
+.labelMenu .label-list:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+.labelMenu .label-list {
+  min-height: 44px;
+  box-sizing: border-box;
+  align-items: center;
 }
 
 body {

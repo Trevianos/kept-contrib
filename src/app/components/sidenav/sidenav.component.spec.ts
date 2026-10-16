@@ -1,3 +1,4 @@
+import { LabelAppearanceDirective } from '../../directives/label-appearance.directive';
 import { LabelColorPickerComponent } from '../label-color-picker/label-color-picker.component';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -17,7 +18,7 @@ describe('Sidebar active Binder and Label', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [NavComponent, LabelColorPickerComponent],
+      declarations: [NavComponent, LabelColorPickerComponent, LabelAppearanceDirective],
       imports: [CommonModule, RouterModule],
       providers: [
         provideRouter([

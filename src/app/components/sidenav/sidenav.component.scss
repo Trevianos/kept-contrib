@@ -1334,5 +1334,5 @@
 // Keep palette and the label name usable in the narrow editor.
 .label-modal-main .label-list .labels-container input,
 .label-modal-main .header .input-container input { min-width: 0; margin-left: 4px; margin-right: 4px; }
-.sidenav-labels .item.is-label > .label-color-dot { margin-left: 16px; margin-right: 20px; }
-:host .close .sidenav-labels .item.is-label > .label-color-dot { margin: 0 4px 0 0; flex-basis: 8px; width: 8px; height: 8px; }
+.sidenav-labels .item.is-label > .label-color-dot { flex-basis: 12px; width: 12px; height: 12px; margin-left: 18px; margin-right: 22px; }
+:host .close .sidenav-labels .item.is-label > .label-color-dot { margin: 0 6px 0 2px; flex-basis: 8px; width: 8px; height: 8px; }
