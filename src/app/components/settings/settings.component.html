@@ -14,6 +14,76 @@
     @if (error) { <div class="error global-msg">{{error}}</div> }
     @if (success) { <div class="success global-msg">{{success}}</div> }
 
+    <section class="settings-group profile-section">
+      <h2 class="group-title color-blue"><span class="material-symbols-outlined" aria-hidden="true">person</span>Profile</h2>
+      <div class="auth-form">
+        <div class="profile-avatar-row">
+          <div class="profile-preview">
+            @if (avatarPreview) {
+              <img [src]="avatarPreview" alt="Avatar preview">
+            } @else {
+              <div class="avatar-fallback large animal-{{avatarPresetPreview || 'cat'}}">
+                <span class="head"><i></i></span>
+              </div>
+            }
+          </div>
+          <div class="profile-photo-actions">
+            <input #avatarFile class="profile-file-input" type="file" accept="image/*" (change)="uploadAvatar($event)" hidden>
+            <button type="button" class="btn-secondary" (click)="avatarFile.click()">
+              <span class="material-symbols-outlined" aria-hidden="true">add_a_photo</span>
+              Change photo
+            </button>
+            <button type="button" class="btn-secondary remove-avatar-btn" (click)="clearAvatar()">
+              <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+              Remove photo
+            </button>
+          </div>
+        </div>
+        <label class="profile-field">
+          <span>Display name</span>
+          <input #displayNameInput type="text" [value]="authService.currentUser?.displayName || ''">
+        </label>
+        @if (profileError) {
+          <div class="profile-error">{{profileError}}</div>
+        }
+        <div class="password-reset-section">
+          <button class="btn-secondary pw-reset-toggle" type="button" (click)="togglePasswordReset()">
+            <span class="material-symbols-outlined" aria-hidden="true">lock_reset</span>
+            {{showPasswordReset ? 'Cancel password change' : 'Change password'}}
+          </button>
+          @if (showPasswordReset) {
+            <div class="pw-reset-form">
+              <label class="profile-field">
+                <span>Current password</span>
+                <input type="password" [(ngModel)]="currentPassword" autocomplete="current-password" placeholder="Enter current password">
+              </label>
+              <label class="profile-field">
+                <span>New password</span>
+                <input type="password" [(ngModel)]="newPassword" autocomplete="new-password" placeholder="Min. 8 characters">
+              </label>
+              <label class="profile-field">
+                <span>Confirm new password</span>
+                <input type="password" [(ngModel)]="confirmNewPassword" autocomplete="new-password" placeholder="Re-enter new password">
+              </label>
+              @if (passwordResetError) {
+                <div class="pw-feedback error">{{passwordResetError}}</div>
+              }
+              @if (passwordResetSuccess) {
+                <div class="pw-feedback success">{{passwordResetSuccess}}</div>
+              }
+              <button class="btn-secondary pw-save" type="button" [disabled]="isResettingPassword || !currentPassword || !newPassword || !confirmNewPassword" (click)="resetMyPassword()">
+                {{isResettingPassword ? 'Updating...' : 'Update password'}}
+              </button>
+            </div>
+          }
+        </div>
+        @if (profileSuccess) { <div class="success" role="status">{{profileSuccess}}</div> }
+        <div class="profile-actions">
+          <button class="primary" type="button" (click)="saveProfile(displayNameInput.value)">Save changes</button>
+        </div>
+      </div>
+    </section>
+
     <!-- ── Group: Data & Migration ──────────────────────────────────────── -->
     <div class="settings-group">
       <h2 class="group-title color-blue">

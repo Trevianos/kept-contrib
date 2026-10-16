@@ -92,21 +92,11 @@
       <span class="pic trash" aria-hidden="true"></span>
       <span class="text">Trash</span>
     </div>
-    @if (auth.isAdmin) {
-      <div [class.active]="router.url === '/users'" routerLink="/users" class="item" (click)="onNavItemClick()">
-        <span class="pic users" aria-hidden="true"></span>
-        <span class="text">Users/Admin settings</span>
-      </div>
-    }
     <div class="item mobile-only-item" (click)="toggleTheme()">
       <span class="material-pic material-symbols-outlined" aria-hidden="true">
         {{auth.currentUser?.theme === 'light' ? 'dark_mode' : 'light_mode'}}
       </span>
       <span class="text">{{auth.currentUser?.theme === 'light' ? 'Use dark mode' : 'Use light mode'}}</span>
-    </div>
-    <div class="item" (click)="logout()">
-      <span class="material-pic material-symbols-outlined" aria-hidden="true">logout</span>
-      <span class="text">Sign out</span>
     </div>
   </div>
   @if (Shared.showInstallButton | async) {
