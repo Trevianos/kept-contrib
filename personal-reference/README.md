@@ -13,7 +13,7 @@ Production container: `kept-app`; image: `kept-fontfix:local`; data mounted sepa
 
 ## Original binary branding assets (must be supplied separately)
 
-The uploaded verified archive also includes the following *exact* user-provided assets. They are **not yet committed to this branch**; do not manufacture replacements. To make the integration complete, first import these exact files from the accompanying `kept-branding-assets.zip` into `personal-reference/branding/`:
+The verified production archive includes the following *exact* user-provided assets. They may be provided in this reference branch as `personal-reference/kept-branding-assets.zip` (uploaded separately via GitHub UI). The ZIP stores paths under `personal-reference/branding/` already. Import only its five verified binary assets into the future `personal/integration` branch; do not manufacture replacements or carry the ZIP into the final integration branch:
 
 | File | Dimensions | SHA-256 |
 | --- | --- | --- |
