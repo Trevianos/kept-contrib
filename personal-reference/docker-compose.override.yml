@@ -1,0 +1,6 @@
+services:
+  kept:
+    build:
+      context: .
+      dockerfile: Dockerfile.fontfix
+    image: kept-fontfix:local
