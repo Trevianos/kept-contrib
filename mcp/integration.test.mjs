@@ -43,10 +43,11 @@ async function api(baseUrl, pathname, { token, method = 'GET', body, form, expec
 test('dedicated MCP access is opt-in, scoped, revocable, and capability gated', { timeout: 25_000 }, async () => {
   const port = 4300 + Math.floor(Math.random() * 1000);
   const baseUrl = `http://127.0.0.1:${port}`;
-  const dbPath = path.join(os.tmpdir(), `kept-mcp-${process.pid}-${Date.now()}.sqlite`);
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kept-mcp-'));
+  const dbPath = path.join(directory, 'kept.sqlite');
   const child = childProcess.spawn(process.execPath, ['server/server.js'], {
     cwd: root,
-    env: { ...process.env, PORT: String(port), SQLITE_PATH: dbPath },
+    env: { ...process.env, PORT: String(port), DATA_DIR: directory, SQLITE_PATH: dbPath },
     stdio: ['ignore', 'pipe', 'pipe']
   });
   let stderr = '';
@@ -115,7 +116,7 @@ test('dedicated MCP access is opt-in, scoped, revocable, and capability gated', 
     const exited = child.exitCode === null ? new Promise(resolve => child.once('exit', resolve)) : Promise.resolve();
     child.kill('SIGTERM');
     await exited;
-    for (const suffix of ['', '-wal', '-shm']) fs.rmSync(`${dbPath}${suffix}`, { force: true });
+    fs.rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 
   assert.equal(stderr, '', stderr);

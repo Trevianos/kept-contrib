@@ -51,3 +51,6 @@ import 'zone.js';  // Included with Angular CLI.
 /***************************************************************************************************
  * APPLICATION IMPORTS
  */
+
+// Required before Angular services generate offline identities on LAN HTTP.
+import './uuid-polyfill';

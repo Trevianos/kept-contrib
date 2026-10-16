@@ -6,3 +6,16 @@ data
 .vscode
 .gemini
 *.log
+
+# References, tests and local state are not Docker build inputs.
+personal-reference
+test-fixtures
+tmp
+scratch
+coverage
+.env
+.env.*
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*

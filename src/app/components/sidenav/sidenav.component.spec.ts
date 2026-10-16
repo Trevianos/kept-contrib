@@ -15,8 +15,6 @@ describe('Sidebar active Binder and Label', () => {
   const labels = ['Úkoly doma', 'Běžné', 'Běžné další', 'Znaky / ? # % +'];
 
   beforeEach(async () => {
-    // Layout measurement is outside this routing regression test.
-    spyOn(NavComponent.prototype, 'ngAfterViewInit');
     await TestBed.configureTestingModule({
       declarations: [NavComponent],
       imports: [CommonModule, RouterModule],
@@ -66,4 +64,48 @@ describe('Sidebar active Binder and Label', () => {
       });
     }
   }
+
+  it('keeps independent section state across recreation and scrolls the whole sidebar', () => {
+    const auth = TestBed.inject(AuthService) as any;
+    auth.currentUser = { id: 934 };
+    const keys = ['binders', 'labels'].map(section => `kept_sidebar_${section}_expanded:934`);
+    const previous = keys.map(key => localStorage.getItem(key));
+    keys.forEach(key => localStorage.removeItem(key));
+    try {
+      let fixture = TestBed.createComponent(NavComponent);
+      fixture.detectChanges();
+      const binderToggle = fixture.nativeElement.querySelector('[aria-controls="sidebar-binders"]');
+      binderToggle.click();
+      fixture.detectChanges();
+      expect(binderToggle.getAttribute('aria-expanded')).toBe('false');
+      expect(fixture.nativeElement.querySelector('#sidebar-binders').hidden).toBeTrue();
+      expect(fixture.nativeElement.querySelector('#sidebar-labels').hidden).toBeFalse();
+      expect(getComputedStyle(fixture.nativeElement.querySelector('.main-sidebar')).overflowY).toBe('auto');
+      expect(fixture.nativeElement.querySelector('.sidenav-labels-wrap')).toBeNull();
+      fixture.destroy();
+      fixture = TestBed.createComponent(NavComponent);
+      fixture.detectChanges();
+      expect(fixture.componentInstance.bindersExpanded).toBeFalse();
+      expect(fixture.componentInstance.labelsExpanded).toBeTrue();
+      fixture.nativeElement.querySelector('[aria-controls="sidebar-labels"]').click();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('#sidebar-labels').hidden).toBeTrue();
+      fixture.destroy();
+    } finally {
+      keys.forEach((key, index) => previous[index] === null ? localStorage.removeItem(key) : localStorage.setItem(key, previous[index]!));
+    }
+  });
+
+  it('disables disclosure controls for empty sections', () => {
+    const shared = TestBed.inject(SharedService);
+    shared.binder.list = [];
+    shared.label.list = [];
+    const fixture = TestBed.createComponent(NavComponent);
+    fixture.detectChanges();
+    for (const button of fixture.nativeElement.querySelectorAll('.section-toggle') as NodeListOf<HTMLButtonElement>) {
+      expect(button.disabled).toBeTrue();
+      expect(button.getAttribute('aria-expanded')).toBe('false');
+    }
+    fixture.destroy();
+  });
 });

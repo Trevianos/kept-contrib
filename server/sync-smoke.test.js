@@ -1,4 +1,5 @@
 const assert = require('assert');
+const { once } = require('node:events');
 const childProcess = require('child_process');
 const fs = require('fs');
 const os = require('os');
@@ -6,7 +7,8 @@ const path = require('path');
 
 const root = path.join(__dirname, '..');
 const port = 3300 + Math.floor(Math.random() * 1000);
-const dbPath = path.join(os.tmpdir(), `kept-sync-smoke-${process.pid}.sqlite`);
+const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kept-sync-smoke-'));
+const dbPath = path.join(directory, 'kept.sqlite');
 const base = `http://127.0.0.1:${port}/api`;
 
 async function request(pathname, options = {}) {
@@ -45,7 +47,7 @@ function authHeaders(token) {
 async function main() {
   const child = childProcess.spawn('node', ['server/server.js'], {
     cwd: root,
-    env: { ...process.env, PORT: String(port), SQLITE_PATH: dbPath },
+    env: { ...process.env, PORT: String(port), DATA_DIR: directory, SQLITE_PATH: dbPath },
     stdio: ['ignore', 'pipe', 'pipe']
   });
   child.stdout.on('data', chunk => process.stdout.write(chunk));
@@ -423,10 +425,12 @@ async function main() {
 
     console.log('Sync smoke tests passed.');
   } finally {
-    child.kill('SIGTERM');
-    fs.rmSync(dbPath, { force: true });
-    fs.rmSync(`${dbPath}-wal`, { force: true });
-    fs.rmSync(`${dbPath}-shm`, { force: true });
+    if (child.exitCode === null && child.signalCode === null) {
+      const stopped = once(child, 'close');
+      child.kill('SIGTERM');
+      await stopped;
+    }
+    fs.rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 }
 

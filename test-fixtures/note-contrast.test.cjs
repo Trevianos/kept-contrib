@@ -19,7 +19,7 @@ const controls = `<div class="icons-container"><div class="icons"><div class="al
 test('note contrast CSS matrix: both themes, colors, editor, images and states', async () => {
   const { encapsulateStyle } = await import('@angular/compiler');
   const css = globalCss + ['notes', 'input', 'link-preview'].map(name => encapsulateStyle(compile(`src/app/components/${name}/${name}.component.scss`), 'fixture')).join('');
-  const browser = await chromium.launch({ channel: 'msedge', headless: true });
+  const browser = await chromium.launch({ ...(process.env.KEPT_BROWSER_CHANNEL ? { channel: process.env.KEPT_BROWSER_CHANNEL } : {}), headless: true });
   try {
     const page = await browser.newPage();
     for (const light of [false, true]) {

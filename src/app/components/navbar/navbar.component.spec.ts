@@ -71,7 +71,7 @@ describe('Avatar navigation', () => {
         document.body.classList.toggle('light-theme', light);
         const item = fixture.nativeElement.querySelector('#user-menu a');
         const style = getComputedStyle(item);
-        expect(style.fontFamily).toContain('Google Sans');
+        expect(style.fontFamily).toContain('Kept Sans');
         expect(style.fontSize).toBe('14px');
         expect(style.fontWeight).toBe('500');
         expect(style.alignItems).toBe('center');

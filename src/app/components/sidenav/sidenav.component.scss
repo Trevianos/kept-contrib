@@ -200,7 +200,7 @@
       }
 
       &.active {
-        background: #feefc3;
+        background: var(--kept-accent);
         border-color: rgba(251, 188, 4, 0.45);
         border-radius: 14px 7px 7px 14px;
         margin-left: 0;
@@ -218,7 +218,7 @@
       }
 
       &.active {
-        background: #feefc3;
+        background: var(--kept-accent);
       }
     }
   }
@@ -275,7 +275,7 @@
     }
 
     &.active {
-      background-color: #feefc3;
+      background-color: var(--kept-accent);
       color: #202124;
 
       .pic {
@@ -512,13 +512,14 @@
     }
 
     .branding-text {
-      color: #feefc3;
-      font-family: "Lobster Two", cursive;
-      font-size: 44px;
-      font-weight: 700;
-      line-height: 1;
+      color: var(--kept-accent);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 26px;
+      font-weight: 600;
+      line-height: 1.2;
       white-space: nowrap;
-      text-shadow: 4px 4px 0px #8ab4f8;
+      text-shadow: none;
+      letter-spacing: 0;
       transition: opacity 0.1s;
       vertical-align: middle;
       display: inline-block;
@@ -1236,7 +1237,7 @@
       }
 
       &.active {
-        background-color: #feefc3;
+        background-color: var(--kept-accent);
 
         .pic {
           opacity: 0.87;

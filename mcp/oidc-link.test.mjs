@@ -1,4 +1,6 @@
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { once } from 'node:events';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createHash, generateKeyPairSync, randomBytes, sign } from 'node:crypto';
@@ -7,7 +9,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 
 function waitForServer(child) {
   return new Promise((resolve, reject) => {
@@ -136,14 +138,18 @@ test('OIDC accounts can be explicitly linked, signed in, and safely disconnected
     cwd: root,
     env: {
       ...process.env,
-      PORT: String(port), SQLITE_PATH: join(directory, 'kept.sqlite'), BASE_URL: origin,
+      PORT: String(port), DATA_DIR: directory, SQLITE_PATH: join(directory, 'kept.sqlite'), BASE_URL: origin,
       KEPT_OIDC_ISSUER: provider.issuer, KEPT_OIDC_CLIENT_ID: 'kept-test',
       KEPT_OIDC_CLIENT_SECRET: 'test-secret', KEPT_OIDC_NAME: 'Test Identity'
     },
     stdio: ['ignore', 'pipe', 'pipe']
   });
   t.after(async () => {
-    child.kill('SIGTERM');
+    if (child.exitCode === null && child.signalCode === null) {
+      const stopped = once(child, 'close');
+      child.kill('SIGTERM');
+      await stopped;
+    }
     await provider.close();
     await rm(directory, { recursive: true, force: true });
   });

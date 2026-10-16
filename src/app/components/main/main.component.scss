@@ -68,7 +68,7 @@
 
   .mobile-compose-fab {
     align-items: center;
-    background: #feefc3;
+    background: var(--kept-accent);
     border: none;
     border-radius: 16px;
     bottom: max(24px, calc(env(safe-area-inset-bottom, 0px) + 8px));
@@ -301,7 +301,7 @@
 
   .mobile-compose-fab {
     align-items: center;
-    background: #feefc3;
+    background: var(--kept-accent);
     border: none;
     border-radius: 16px; // more squarish rounded corners for modern feel
     bottom: 24px;

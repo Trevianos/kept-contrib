@@ -1,6 +1,8 @@
 @import "timepicker-ui/main.css";
 
 :root {
+  // Personal branding: UI selection and wordmark, not note palette colors.
+  --kept-accent: #FFA726;
   --note-width: 240px;
 }
 
@@ -1186,7 +1188,7 @@ body.light-theme [data-tooltip="true"].collaboratorMenu .owner-pill {
 //? snackbar AKA toast
 @import "~node-snackbar/dist/snackbar.css";
 .snackbar-container {
-  background-color: #feefc3 !important;
+  background-color: var(--kept-accent) !important;
   color: #202124 !important;
   border-radius: 4px !important;
   padding: 14px 24px !important;

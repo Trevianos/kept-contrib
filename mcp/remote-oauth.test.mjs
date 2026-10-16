@@ -1,4 +1,6 @@
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { once } from 'node:events';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
@@ -6,7 +8,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 
 function waitForServer(child) {
   return new Promise((resolve, reject) => {
@@ -41,11 +43,15 @@ test('OAuth grants scoped access to the Kept API and remote MCP', async t => {
   const origin = `http://127.0.0.1:${port}`;
   const child = spawn(process.execPath, ['server/server.js'], {
     cwd: root,
-    env: { ...process.env, PORT: String(port), SQLITE_PATH: join(directory, 'kept.sqlite'), BASE_URL: origin },
+    env: { ...process.env, PORT: String(port), DATA_DIR: directory, SQLITE_PATH: join(directory, 'kept.sqlite'), BASE_URL: origin },
     stdio: ['ignore', 'pipe', 'pipe']
   });
   t.after(async () => {
-    child.kill('SIGTERM');
+    if (child.exitCode === null && child.signalCode === null) {
+      const stopped = once(child, 'close');
+      child.kill('SIGTERM');
+      await stopped;
+    }
     await rm(directory, { recursive: true, force: true });
   });
   await waitForServer(child);
