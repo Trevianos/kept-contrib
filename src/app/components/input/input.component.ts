@@ -92,6 +92,10 @@ export class InputComponent implements OnInit {
   selectionFormattingStyle: Record<string, string> = {}
   private textHistoryTarget?: HTMLElement
   private textSelectionFrame?: number
+  private dismissedFormattingRange?: Range
+  private formattingSelectionGesture = false
+  private manualFormattingSelection = false
+  private readonly formattingKeydownHandler = (event: KeyboardEvent) => this.onFormattingKeydown(event)
   private readonly textSelectionChangeHandler = () => this.scheduleSelectionFormattingUpdate()
   private readonly textSelectionRepositionHandler = () => this.scheduleSelectionFormattingUpdate()
   private cboxHistory: CheckboxI[][] = []
@@ -985,6 +989,10 @@ export class InputComponent implements OnInit {
     this.isDrawingFullscreen = false
     this.isHybridNote = false
     this.showTextFormatting = false
+    this.showSelectionFormatting = false
+    this.dismissedFormattingRange = undefined
+    this.manualFormattingSelection = false
+    this.formattingSelectionGesture = false
     this.showDrawingBackgroundMenu = false
     this.showDrawingMoreMenu = false
     this.showDrawingEraserMenu = false
@@ -2132,9 +2140,54 @@ export class InputComponent implements OnInit {
   }
 
   toggleTextFormatting(event: Event) {
+    event.preventDefault()
     event.stopPropagation()
-    this.showTextFormatting = !this.showTextFormatting
-    if (this.showTextFormatting) this.showSelectionFormatting = false
+    if (this.showTextFormatting) this.dismissTextFormatting()
+    else {
+      this.manualFormattingSelection = !!window.getSelection()?.toString()
+      this.showTextFormatting = true
+      this.showSelectionFormatting = false
+    }
+  }
+
+  private dismissTextFormatting() {
+    const selection = window.getSelection()
+    this.dismissedFormattingRange = selection?.rangeCount ? selection.getRangeAt(0).cloneRange() : undefined
+    this.showTextFormatting = false
+    this.showSelectionFormatting = false
+  }
+
+  onFormattingKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape' && (this.showTextFormatting || this.showSelectionFormatting)) {
+      event.preventDefault()
+      event.stopPropagation()
+      this.dismissTextFormatting()
+    }
+  }
+
+  @HostListener('document:pointerdown', ['$event'])
+  onFormattingPointerdown(event: PointerEvent) {
+    const target = event.target as Element | null
+    if (target?.closest('.text-format-toolbar, .text-format-trigger, .mobile-icon.format')) return
+    this.formattingSelectionGesture = !!target && !!(this.noteBody?.nativeElement.contains(target)
+      || this.noteTitle?.nativeElement.contains(target))
+    if (this.showTextFormatting || this.showSelectionFormatting) this.dismissTextFormatting()
+  }
+
+  @HostListener('document:pointerup')
+  onFormattingPointerup() {
+    if (!this.formattingSelectionGesture) return
+    this.formattingSelectionGesture = false
+    this.dismissedFormattingRange = undefined
+    this.scheduleSelectionFormattingUpdate()
+  }
+
+  @HostListener('document:keyup', ['$event'])
+  onFormattingKeyup(event: KeyboardEvent) {
+    if (event.shiftKey || ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a')) {
+      this.dismissedFormattingRange = undefined
+      this.scheduleSelectionFormattingUpdate()
+    }
   }
 
   private scheduleSelectionFormattingUpdate() {
@@ -2146,17 +2199,27 @@ export class InputComponent implements OnInit {
   }
 
   private updateSelectionFormatting() {
-    if (this.destroyed || this.showTextFormatting || this.isDrawingNote || !this.canFormatText() || this.shouldUseMobileFormattingBar()) {
+    if (this.destroyed || this.isDrawingNote || !this.canFormatText()) {
       this.showSelectionFormatting = false
       return
     }
     const selection = window.getSelection()
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
       this.showSelectionFormatting = false
+      if (this.manualFormattingSelection) this.showTextFormatting = false
+      this.dismissedFormattingRange = undefined
       return
     }
     const range = selection.getRangeAt(0)
+    const dismissed = this.dismissedFormattingRange
+    if (dismissed && range.startContainer === dismissed.startContainer && range.startOffset === dismissed.startOffset
+      && range.endContainer === dismissed.endContainer && range.endOffset === dismissed.endOffset) return
+    this.dismissedFormattingRange = undefined
     if (!this.selectionBelongsToTextEditor(range)) {
+      this.showSelectionFormatting = false
+      return
+    }
+    if (this.showTextFormatting || this.shouldUseMobileFormattingBar()) {
       this.showSelectionFormatting = false
       return
     }
@@ -2242,13 +2305,20 @@ export class InputComponent implements OnInit {
   applyTextFormat(command: 'h1' | 'h2' | 'body' | 'bold' | 'italic' | 'underline' | 'clear', event: Event) {
     event.preventDefault()
     event.stopPropagation()
+    const selection = window.getSelection()
+    if (!selection?.rangeCount || !this.selectionBelongsToTextEditor(selection.getRangeAt(0))) return
     if (command === 'h1') document.execCommand('formatBlock', false, 'H1')
     if (command === 'h2') document.execCommand('formatBlock', false, 'H2')
     if (command === 'body') document.execCommand('formatBlock', false, 'DIV')
     if (command === 'bold') document.execCommand('bold')
     if (command === 'italic') document.execCommand('italic')
     if (command === 'underline') document.execCommand('underline')
-    if (command === 'clear') document.execCommand('removeFormat')
+    if (command === 'clear') {
+      // removeFormat clears inline styles but leaves H1/H2 blocks in Chromium.
+      // Native editing commands preserve the selection and browser undo history.
+      document.execCommand('removeFormat')
+      document.execCommand('formatBlock', false, 'DIV')
+    }
     this.scheduleSelectionFormattingUpdate()
     this.updateInputLength({
       title: this.noteTitle?.nativeElement.innerHTML.length || 0,
@@ -3563,6 +3633,8 @@ export class InputComponent implements OnInit {
 
   saveNoteSubscription?: Subscription
   ngAfterViewInit() {
+    // Handle toolbar Escape before the note modal's document shortcut saves/closes it.
+    document.addEventListener('keydown', this.formattingKeydownHandler, true)
     document.addEventListener('selectionchange', this.textSelectionChangeHandler)
     window.addEventListener('resize', this.textSelectionRepositionHandler)
     document.addEventListener('scroll', this.textSelectionRepositionHandler, true)
@@ -3728,6 +3800,7 @@ export class InputComponent implements OnInit {
     this.widgetCreateSubscription?.unsubscribe();
     this.closeMobileComposerSubscription?.unsubscribe();
     this.preferencesSubscription?.unsubscribe();
+    document.removeEventListener('keydown', this.formattingKeydownHandler, true);
     document.removeEventListener('selectionchange', this.textSelectionChangeHandler);
     window.removeEventListener('resize', this.textSelectionRepositionHandler);
     document.removeEventListener('scroll', this.textSelectionRepositionHandler, true);

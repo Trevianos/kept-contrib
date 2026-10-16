@@ -260,7 +260,7 @@
       }
       <div class="icons">
         <button type="button" class="text-format-trigger H pop" data-pop="Formatting options"
-          [class.active]="showTextFormatting" [disabled]="!canFormatText()" (click)="toggleTextFormatting($event)">A</button>
+          [class.active]="showTextFormatting" [disabled]="!canFormatText()" (mousedown)="$event.preventDefault()" (click)="toggleTextFormatting($event)">A</button>
         <div class="alarm H pop" data-pop="Remind me"
           [class.alarm-active]="!!getActiveReminder()"
           (click)="alarmIconTapped($event)">
@@ -289,7 +289,7 @@
           <button type="button" class="dc-confirm" (click)="confirmPendingDate()">Pick time →</button>
         </div>
       }
-      <div class="close-btn" (click)="saveNote()"> Close </div>
+      <button type="button" class="close-btn" (click)="saveNote()"> Close </button>
     </div>
 
     <!--? Mobile Bottom Bar -->
@@ -318,7 +318,7 @@
           <div class="glyph attachment"></div>
         </div>
         <button type="button" class="mobile-icon format" [class.active]="showTextFormatting" [disabled]="!canFormatText()"
-          (click)="toggleTextFormatting($event)" title="Formatting options">A</button>
+          (mousedown)="$event.preventDefault()" (click)="toggleTextFormatting($event)" title="Formatting options">A</button>
         <div class="mobile-icon check" (click)="toggleCbox()" title="Add checkboxes">
           <div class="glyph check"></div>
         </div>
