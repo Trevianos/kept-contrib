@@ -1,3 +1,4 @@
+import { LabelColorPickerComponent } from '../label-color-picker/label-color-picker.component';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { CommonModule } from '@angular/common';
@@ -16,7 +17,7 @@ describe('Sidebar active Binder and Label', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [NavComponent],
+      declarations: [NavComponent, LabelColorPickerComponent],
       imports: [CommonModule, RouterModule],
       providers: [
         provideRouter([
@@ -27,6 +28,7 @@ describe('Sidebar active Binder and Label', () => {
         ]),
         { provide: SharedService, useValue: {
           initPwa: () => {},
+          labelColor: () => '#e53935',
           binder: { list: binders.map(name => ({ name })) },
           label: { list: labels.map(name => ({ name })) },
           closeSideBar: new Subject(),
@@ -94,6 +96,21 @@ describe('Sidebar active Binder and Label', () => {
     } finally {
       keys.forEach((key, index) => previous[index] === null ? localStorage.removeItem(key) : localStorage.setItem(key, previous[index]!));
     }
+  });
+
+  it('preserves an open color picker when realtime refresh replaces label objects', () => {
+    const shared = TestBed.inject(SharedService);
+    const fixture = TestBed.createComponent(NavComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.openModal();
+    const trigger = fixture.nativeElement.querySelector('.label-list app-label-color-picker .color-trigger') as HTMLButtonElement;
+    trigger.click(); fixture.detectChanges();
+    const palette = fixture.nativeElement.querySelector('.palette:popover-open') as HTMLElement;
+    expect(palette).toBeTruthy();
+    shared.label.list = shared.label.list.map(label => ({ ...label }));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.palette:popover-open')).toBe(palette);
+    palette.hidePopover(); fixture.componentInstance.hideModal(); fixture.destroy();
   });
 
   it('disables disclosure controls for empty sections', () => {

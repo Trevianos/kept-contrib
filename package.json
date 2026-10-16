@@ -17,6 +17,7 @@
     "test": "ng test",
     "analyze": "webpack-bundle-analyzer dist/keep/stats.json",
     "docker:deploy": "npx tsx ./deploy-docker-images.ts",
+    "test:labels": "node --test server/label-colors.test.js test-fixtures/label-colors*.test.cjs",
     "test:personal": "node --test test-fixtures/note-contrast.test.cjs test-fixtures/personal-*.test.cjs"
   },
   "private": true,

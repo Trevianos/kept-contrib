@@ -231,6 +231,7 @@
     @for (label of Shared.label.list; track label) {
       <div class="label-list" (click)="labelMenu(label)">
         <div [class.done]='isSelectedLabel(label)' class="check-icon"></div>
+        <span class="label-color-dot" [style.background-color]="Shared.labelColor(label)" aria-hidden="true"></span>
         <div class="label-name">{{label.name}}</div>
       </div>
     }

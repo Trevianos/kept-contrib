@@ -3555,3 +3555,28 @@ body app-input .note-main[data-note-ink] {
 body app-input .note-main[data-note-ink="#e8eaed"] .mobile-bottom-bar .glyph {
   filter: brightness(0) invert(1) !important;
 }
+
+// Fixed label identity, separated from any note/image with a two-tone ring.
+.label-color-dot {
+  display: inline-block;
+  flex: 0 0 12px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-sizing: content-box;
+  box-shadow: 0 0 0 1px #202124;
+  outline: 1px solid var(--note-ink, currentColor);
+  outline-offset: 1px;
+  margin: 0 8px 0 2px;
+  vertical-align: middle;
+}
+
+body {
+  --label-picker-bg: #28292c;
+  --label-picker-ink: #e8eaed;
+}
+body.light-theme {
+  --label-picker-bg: #fff;
+  --label-picker-ink: #202124;
+}

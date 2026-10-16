@@ -522,6 +522,10 @@ async function init() {
     }
     await run('DROP TABLE labels_legacy');
   }
+  const labelColumns = await all('PRAGMA table_info(labels)');
+  if (!labelColumns.some(column => column.name === 'color')) {
+    await run('ALTER TABLE labels ADD COLUMN color TEXT');
+  }
   await run(`
     CREATE TABLE IF NOT EXISTS notes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1865,17 +1869,29 @@ function selectedActionsWithDependencies(actions, selected) {
   return actions.filter((_action, index) => expanded.has(index));
 }
 
-async function findOrCreateLabelForUser(userId, rawName) {
+function labelColorInput(value) {
+  if (value == null || value === '') return null;
+  if (typeof value !== 'string' || !/^#[0-9a-f]{6}$/i.test(value)) {
+    const error = new Error('Label color must be #RRGGBB.');
+    error.status = 400;
+    throw error;
+  }
+  return value.toLowerCase();
+}
+
+async function findOrCreateLabelForUser(userId, rawName, rawColor) {
   const name = String(rawName || '').trim();
   if (!name) {
     const error = new Error('Label name is required.');
     error.status = 400;
     throw error;
   }
-  const existing = await get('SELECT id, name FROM labels WHERE userId = ? AND lower(name) = lower(?)', [userId, name]);
+  const existing = await get('SELECT id, name, color FROM labels WHERE userId = ? AND lower(name) = lower(?)', [userId, name]);
   if (existing) return { ...existing, created: false };
-  const result = await run('INSERT INTO labels (name, userId) VALUES (?, ?)', [name, userId]);
-  return { id: result.id, name, created: true };
+  const color = labelColorInput(rawColor);
+  const result = await run('INSERT INTO labels (name, userId, color) VALUES (?, ?, ?)', [name, userId, color]);
+  broadcastRealtime([userId], { type: 'labels-changed' });
+  return { id: result.id, name, color, created: true };
 }
 
 async function normalizeLabelsForUser(userId, rawLabels) {
@@ -1897,7 +1913,7 @@ async function normalizeLabelsForUser(userId, rawLabels) {
     }
     seen.add(key);
 
-    const label = await findOrCreateLabelForUser(userId, rawName);
+    const label = await findOrCreateLabelForUser(userId, rawName, rawLabel?.color);
     const added = rawLabel?.added !== false;
     const nextLabel = { id: label.id, name: label.name, added };
     normalized.push(nextLabel);
@@ -1942,7 +1958,7 @@ async function backfillImportedNoteLabels() {
 async function findLabelForUser(userId, rawName) {
   const name = String(rawName || '').trim();
   if (!name) return null;
-  return await get('SELECT id, name FROM labels WHERE userId = ? AND lower(name) = lower(?)', [userId, name]);
+  return await get('SELECT id, name, color FROM labels WHERE userId = ? AND lower(name) = lower(?)', [userId, name]);
 }
 
 async function validateKeptActionPlan(userId, transcript, actionPlan) {
@@ -4488,7 +4504,7 @@ app.get('/api/users/search', requireAuth, asyncRoute(async (req, res) => {
 }));
 
 app.get('/api/labels', requireAuth, asyncRoute(async (req, res) => {
-  res.json(await all('SELECT id, name FROM labels WHERE userId = ? ORDER BY name COLLATE NOCASE, id', [req.user.id]));
+  res.json(await all('SELECT id, name, color FROM labels WHERE userId = ? ORDER BY name COLLATE NOCASE, id', [req.user.id]));
 }));
 
 app.post('/api/labels/find-or-create', requireAuth, asyncRoute(async (req, res) => {
@@ -4499,30 +4515,36 @@ app.post('/api/labels/find-or-create', requireAuth, asyncRoute(async (req, res) 
 app.post('/api/labels', requireAuth, asyncRoute(async (req, res) => {
   const name = String(req.body.name || '').trim();
   if (!name) return res.status(400).json({ error: 'Label name is required.' });
-  const result = await run('INSERT INTO labels (name, userId) VALUES (?, ?)', [name, req.user.id]);
-  res.status(201).json({ id: result.id, name });
+  const color = labelColorInput(req.body.color);
+  const result = await run('INSERT INTO labels (name, userId, color) VALUES (?, ?, ?)', [name, req.user.id, color]);
+  broadcastRealtime([req.user.id], { type: 'labels-changed' });
+  res.status(201).json({ id: result.id, name, color });
 }));
 
 app.patch('/api/labels/:id', requireAuth, asyncRoute(async (req, res) => {
   const labelId = Number(req.params.id);
-  const name = String(req.body.name || '').trim();
-  if (!name) return res.status(400).json({ error: 'Label name is required.' });
-  const label = await get('SELECT id, name FROM labels WHERE id = ? AND userId = ?', [labelId, req.user.id]);
+  const label = await get('SELECT id, name, color FROM labels WHERE id = ? AND userId = ?', [labelId, req.user.id]);
   if (!label) return res.status(404).json({ error: 'Label not found.' });
+  const name = req.body.name === undefined ? label.name : String(req.body.name || '').trim();
+  if (!name) return res.status(400).json({ error: 'Label name is required.' });
+  const color = req.body.color === undefined ? label.color : labelColorInput(req.body.color);
   const duplicate = await get(
     'SELECT id FROM labels WHERE userId = ? AND lower(name) = lower(?) AND id <> ?',
     [req.user.id, name, labelId]
   );
   if (duplicate) return res.status(409).json({ error: 'Label already exists.' });
-  await run('UPDATE labels SET name = ? WHERE id = ? AND userId = ?', [name, labelId, req.user.id]);
-  const { recipientIds } = await updateNoteLabelReferencesForUser(req.user.id, labelId, name, { oldName: label.name });
-  broadcastRealtime([...recipientIds], { type: 'notes-changed', action: 'labels-updated' });
-  res.json({ id: labelId, name });
+  await run('UPDATE labels SET name = ?, color = ? WHERE id = ? AND userId = ?', [name, color, labelId, req.user.id]);
+  broadcastRealtime([req.user.id], { type: 'labels-changed' });
+  if (name !== label.name) {
+    const { recipientIds } = await updateNoteLabelReferencesForUser(req.user.id, labelId, name, { oldName: label.name });
+    broadcastRealtime([...recipientIds], { type: 'notes-changed', action: 'labels-updated' });
+  }
+  res.json({ id: labelId, name, color });
 }));
 
 app.delete('/api/labels/:id', requireAuth, asyncRoute(async (req, res) => {
   const labelId = Number(req.params.id);
-  const label = await get('SELECT id, name FROM labels WHERE id = ? AND userId = ?', [labelId, req.user.id]);
+  const label = await get('SELECT id, name, color FROM labels WHERE id = ? AND userId = ?', [labelId, req.user.id]);
   if (!label) return res.status(404).json({ error: 'Label not found.' });
   await run('DELETE FROM labels WHERE id = ? AND userId = ?', [labelId, req.user.id]);
   const { recipientIds } = await updateNoteLabelReferencesForUser(req.user.id, labelId, '', { oldName: label.name });
@@ -4826,6 +4848,7 @@ async function syncSnapshotForUser(userId) {
       note.attachments = attachmentsByNoteId.get(row.id) || [];
       return note;
     }),
+    labels: await all('SELECT id, name, color FROM labels WHERE userId = ? ORDER BY name COLLATE NOCASE, id', [userId]),
     reminders: await enrichReminderResponses(reminders),
     occurrences: await nativeOccurrencesForUser(userId),
     attachments: Array.from(attachmentsByNoteId.values()).flat(),
@@ -4876,6 +4899,7 @@ app.get('/api/sync/changes', requireAuth, asyncRoute(async (req, res) => {
   }
   res.json({
     changes,
+    labels: await all('SELECT id, name, color FROM labels WHERE userId = ? ORDER BY name COLLATE NOCASE, id', [req.user.id]),
     cursor: rows.length ? Number(rows[rows.length - 1].sequence) : since,
     hasMore: rows.length === limit && Number(rows[rows.length - 1].sequence) < Number(cursorRow?.cursor || 0),
     serverCursor: Number(cursorRow?.cursor || 0),
@@ -5795,7 +5819,7 @@ app.get('/api/notes/search', requireAuth, asyncRoute(async (req, res) => {
 
 app.get('/api/ai/context', requireAuth, asyncRoute(async (req, res) => {
   const query = String(req.query.query || req.query.q || '').trim();
-  const labels = await all('SELECT id, name FROM labels WHERE userId = ? ORDER BY name COLLATE NOCASE', [req.user.id]);
+  const labels = await all('SELECT id, name, color FROM labels WHERE userId = ? ORDER BY name COLLATE NOCASE', [req.user.id]);
   const users = await all(
     `SELECT id, username, displayName, avatarDataUrl, avatarPreset
      FROM users
@@ -8321,7 +8345,7 @@ app.post('/api/import/google-takeout', requireAuth, googleTakeoutUpload, asyncRo
             const labelKey = labelName.toLowerCase();
             if (seenLabels.has(labelKey)) continue;
             seenLabels.add(labelKey);
-            const label = await findOrCreateLabelForUser(req.user.id, labelName);
+            const label = await findOrCreateLabelForUser(req.user.id, labelName, rawLabel?.color);
             labels.push({ id: label.id, name: label.name, added: true });
           }
           const createdAt = note.createdTimestampUsec ? new Date(note.createdTimestampUsec / 1000).toISOString() : now;

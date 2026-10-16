@@ -1,6 +1,7 @@
 export interface LabelI {
     id?: number
     name: string
+    color?: string
     added?: boolean
 }
 

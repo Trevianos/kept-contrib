@@ -42,6 +42,7 @@ export class SharedService {
     // after async auth bootstrap, common on iOS Safari/PWA) triggers a
     // load. Without this, the constructor-time load runs before the
     // session is ready and the page stays blank until manual refresh.
+    this.Notes.labelsChanged$.subscribe(() => this.Labels.load().catch(console.error));
     this.Labels.labelsList$.subscribe({
       next: (result: LabelI[]) => {
         this.serverLabels = result || [];
@@ -192,6 +193,13 @@ export class SharedService {
     this.selectedNoteIds.next([])
   }
 
+  labelColor(label: LabelI): string {
+    const current = this.label.list.find(item => item.id === label.id && item.name === label.name)
+      || this.label.list.find(item => item.name.toLowerCase() === label.name.toLowerCase());
+    const color = current ? current.color : label.color;
+    return /^#[0-9a-f]{6}$/i.test(color || '') ? color! : '#e53935';
+  }
+
   private refreshLabelList() {
     const labels: LabelI[] = [];
     const seen = new Set<string>();
@@ -217,7 +225,7 @@ export class SharedService {
     const key = name.toLowerCase();
     if (seen.has(key)) return;
     seen.add(key);
-    target.push({ id: label?.id, name });
+    target.push({ id: label?.id, name, color: label?.color });
   }
 
   private compareLabels(a: LabelI, b: LabelI) {

@@ -274,7 +274,7 @@
             @for (label of note.labels; track label) {
               @if (label.added) {
                 <div class="label-container">
-                  <div class="label"><span>{{label.name}}</span>
+                  <div class="label"><span class="label-color-dot" [style.background-color]="Shared.labelColor(label)" aria-hidden="true"></span><span>{{label.name}}</span>
                   <div class="cancel-icon pop" data-pop="Remove Label"
                   (click)="removeLabel(note,label)"></div>
                 </div>
@@ -456,6 +456,7 @@
     @for (label of labels; track label) {
       <div class="label-list" (click)="labelMenu(label)">
         <div [class.done]='label.added' class="check-icon"></div>
+        <span class="label-color-dot" [style.background-color]="Shared.labelColor(label)" aria-hidden="true"></span>
         <div class="label-name">{{label.name}}</div>
       </div>
     }

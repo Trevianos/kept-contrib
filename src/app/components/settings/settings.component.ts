@@ -1,3 +1,4 @@
+import { LabelsService } from '../../services/labels.service';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import * as JSZip from 'jszip';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -264,6 +265,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private reminderService: ReminderService,
     private notesService: NotesService,
+    private labelsService: LabelsService,
     private route: ActivatedRoute,
     private router: Router,
     public authService: AuthService,
@@ -898,10 +900,19 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   // ── Data Export ──────────────────────────────────────────────────────────
 
+  private async notesForExport() {
+    await this.labelsService.load();
+    const labels = this.labelsService.labelsList$.value;
+    return (await this.notesService.getAll()).map(note => ({ ...note, labels: (note.labels || []).map(label => {
+      const current = labels.find(item => item.id === label.id);
+      return { ...label, color: (current ? current.color : label.color) || '#e53935' };
+    }) }));
+  }
+
   async exportJSON() {
     this.isExporting = true;
     try {
-      const notes = await this.notesService.getAll();
+      const notes = await this.notesForExport();
       const blob = new Blob([JSON.stringify(notes, null, 2)], { type: 'application/json' });
       this.downloadFile(blob, 'kept-notes-export.json');
       this.success = 'JSON export complete.';
@@ -915,8 +926,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
   async exportCSV() {
     this.isExporting = true;
     try {
-      const notes = await this.notesService.getAll();
-      const headers = ['id', 'title', 'body', 'labels', 'createdAt', 'updatedAt', 'archived', 'trashed'];
+      const notes = await this.notesForExport();
+      const headers = ['id', 'title', 'body', 'labels', 'createdAt', 'updatedAt', 'archived', 'trashed', 'labelColors'];
       const rows = notes.map(n => [
         n.id,
         `"${(n.noteTitle || '').replace(/"/g, '""')}"`,
@@ -925,7 +936,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
         n.createdAt,
         n.updatedAt,
         n.archived,
-        n.trashed
+        n.trashed,
+        `"${JSON.stringify(n.labels.map(l => ({ name: l.name, color: l.color }))).replace(/"/g, '""')}"`
       ]);
       const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -941,11 +953,14 @@ export class SettingsComponent implements OnInit, OnDestroy {
   async exportMarkdown() {
     this.isExporting = true;
     try {
-      const notes = await this.notesService.getAll();
+      const notes = await this.notesForExport();
       const zip = new JSZip();
 
+      zip.file('kept-labels.json', JSON.stringify(this.labelsService.labelsList$.value, null, 2));
       notes.forEach(n => {
         let md = '';
+        if (n.labels?.length) md += `<!-- kept-labels: ${JSON.stringify(n.labels).replace(/--/g, '\\u002d\\u002d')} -->\n`;
+
         md += `# ${n.noteTitle || 'Untitled Note'}\n`;
         md += `**Created:** ${n.createdAt} | **Updated:** ${n.updatedAt}\n`;
         if (n.labels?.length) {

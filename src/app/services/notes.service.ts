@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { BehaviorSubject, firstValueFrom, Subscription } from 'rxjs';
+import { BehaviorSubject, firstValueFrom, Subscription, Subject } from 'rxjs';
 
 export interface LinkPreviewData {
   title: string;
@@ -49,6 +49,7 @@ export class NotesService {
   private readonly apiUrl = `${environment.apiUrl}/notes`;
   private readonly noteWriteTimeoutMs = 5500;
   private readonly mediaUploadTimeoutMs = 12000;
+  labelsChanged$ = new Subject<void>();
   notesList$ = new BehaviorSubject<NoteI[] | null>(null);
   activeEditors$ = new BehaviorSubject<{noteId: number, editors: any[]} | null>(null);
   private realtimeSocket?: WebSocket;
@@ -216,6 +217,7 @@ export class NotesService {
     const socket = this.realtimeSocket;
 
     this.realtimeSocket.onopen = () => {
+      this.labelsChanged$.next();
       console.log('[Kept WS] connected');
       // Replay any notes we'd previously asked to be present in. This covers
       // (a) joinNote() calls issued while the socket was still handshaking,
@@ -236,7 +238,9 @@ export class NotesService {
     this.realtimeSocket.onmessage = event => {
       try {
         const message = JSON.parse(event.data);
+        if (message.type === 'labels-changed') this.labelsChanged$.next();
         if (message.type === 'notes-changed') {
+          if (message.action === 'labels-updated') this.labelsChanged$.next();
           if (message.action === 'access-revoked') {
             this.removeNoteFromListAndCache(Number(message.noteId), String(message.syncId || '')).catch(console.error);
             this.reminders.load().catch(console.error);

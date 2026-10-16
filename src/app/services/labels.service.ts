@@ -11,13 +11,35 @@ import { AuthService } from './auth.service';
 export class LabelsService {
   private readonly apiUrl = `${environment.apiUrl}/labels`;
   labelsList$ = new BehaviorSubject<LabelI[]>([]);
+  private previousPartition = '';
 
-  constructor(private http: HttpClient, private auth: AuthService) { }
+  constructor(private http: HttpClient, private auth: AuthService) {
+    this.auth.currentUser$.subscribe(user => {
+      if (!user && this.previousPartition) {
+        try { localStorage.removeItem(this.previousPartition); } catch {}
+      }
+      this.previousPartition = user ? this.cacheKey() : '';
+      let cached: LabelI[] = [];
+      try { cached = user ? JSON.parse(localStorage.getItem(this.cacheKey()) || '[]') : []; } catch {}
+      this.labelsList$.next(this.uniqueLabels(Array.isArray(cached) ? cached : []));
+    });
+  }
+
+  private cacheKey() {
+    return `kept_label_colors:${environment.apiUrl}:${this.auth.currentUser?.id || 'anon'}`;
+  }
+
+  private remember(labels: LabelI[]) {
+    this.labelsList$.next(this.uniqueLabels(labels));
+    try { localStorage.setItem(this.cacheKey(), JSON.stringify(this.labelsList$.value)); } catch {}
+  }
 
   async load() {
+    const partition = this.cacheKey();
     try {
       const labels = await firstValueFrom(this.http.get<LabelI[]>(this.apiUrl, { headers: this.auth.authHeaders() }));
-      this.labelsList$.next(this.uniqueLabels(labels));
+      if (partition !== this.cacheKey()) return;
+      this.remember(labels);
     } catch (error: any) {
       if (!navigator.onLine || error?.status === 0) {
         this.labelsList$.next(this.uniqueLabels(this.labelsList$.value));
@@ -34,14 +56,14 @@ export class LabelsService {
     const existing = this.labelsList$.value.find(label => label.name.toLowerCase() === name.toLowerCase());
     if (existing?.id != null) return existing.id;
 
-    if (!navigator.onLine) return this.addLocal(name);
+    if (!navigator.onLine) return this.addLocal(name, labelObj.color);
 
     try {
       const label = await firstValueFrom(this.http.post<LabelI>(this.apiUrl, { ...labelObj, name }, { headers: this.auth.authHeaders() }));
       await this.load();
       return label.id;
     } catch (error: any) {
-      if (error?.status === 0) return this.addLocal(name);
+      if (error?.status === 0) return this.addLocal(name, labelObj.color);
       throw error;
     }
   }
@@ -68,13 +90,13 @@ export class LabelsService {
     }
   }
 
-  private addLocal(name: string) {
+  private addLocal(name: string, color?: string) {
     let id = -Date.now();
     const usedIds = new Set(this.labelsList$.value.map(label => label.id));
     while (usedIds.has(id)) id -= 1;
 
-    const labels = this.uniqueLabels([...this.labelsList$.value, { id, name }]);
-    this.labelsList$.next(labels);
+    const labels = this.uniqueLabels([...this.labelsList$.value, { id, name, color }]);
+    this.remember(labels);
     return id;
   }
 

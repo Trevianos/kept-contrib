@@ -1,3 +1,4 @@
+import { LabelColorPickerComponent } from './components/label-color-picker/label-color-picker.component';
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
@@ -27,6 +28,7 @@ import { ConnectionHeadersInterceptor } from './services/connection-headers.inte
 
 @NgModule({ declarations: [
         AppComponent,
+        LabelColorPickerComponent,
         MainComponent,
         NavComponent,
         NavbarComponent,

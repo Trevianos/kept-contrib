@@ -1,3 +1,4 @@
+import { LabelsService } from '../../services/labels.service';
 import { CommonModule } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
@@ -18,7 +19,7 @@ describe('Settings profile', () => {
     auth = jasmine.createSpyObj('AuthService', ['updateProfile', 'resetOwnPassword']);
     auth.updateProfile.and.resolveTo();
     auth.resetOwnPassword.and.resolveTo({ success: true });
-    component = new SettingsComponent({ detectChanges() {} } as any, null!, null!, null!, null!, auth, null!, null!);
+    component = new SettingsComponent({ detectChanges() {} } as any, null!, null!, null!, null!, null!, auth, null!, null!);
   });
 
   it('saves the name, uploaded avatar and preset through the existing self API', async () => {
@@ -131,6 +132,7 @@ describe('Profile presentation', () => {
         { provide: AuthService, useValue: { currentUser: { displayName: 'Alice' } } },
         { provide: ReminderService, useValue: {} },
         { provide: NotesService, useValue: {} },
+        { provide: LabelsService, useValue: {} },
         { provide: PushNotificationService, useValue: {} },
         { provide: UserPreferencesService, useValue: {} }
       ]

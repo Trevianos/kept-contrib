@@ -71,12 +71,12 @@
   </div>
 
   <div id="sidebar-labels" class="sidenav-labels" [hidden]="!labelsExpanded || Shared.label.list.length === 0">
-    @for (label of Shared.label.list; track label) {
+    @for (label of Shared.label.list; track label.id ?? label.name) {
       <div routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="item is-label"
         (click)="onNavItemClick()"
         [title]="label.name"
         [routerLink]="['/label', label.name]">
-        <span class="pic label" aria-hidden="true"></span>
+        <span class="label-color-dot" [style.background-color]="Shared.labelColor(label)" aria-hidden="true"></span>
         <span class="text">{{label.name}}</span>
         <span class="label-abbr" aria-hidden="true">{{compactLabel(label.name)}}</span>
       </div>
@@ -179,6 +179,7 @@
       <div class="header">
         <p>Edit labels</p>
         <div class="input-container">
+          <app-label-color-picker [color]="newLabelColor" label="New label" (colorChange)="newLabelColor = $event"></app-label-color-picker>
           <div #plusIcon class="plus-icon H" (click)="labelInput.value=''"></div>
           <input #labelInput (blur)="plusIcon.classList.toggle('cancel-icon')"
             (focus)="plusIcon.classList.toggle('cancel-icon')" (keydown.enter)="addLabel(labelInput)"
@@ -186,11 +187,12 @@
           <div [style.display]="labelInput.value.length ? 'block' : 'none'" class="check-icon H"
             (click)="addLabel(labelInput)"></div>
         </div>
-        <div #labelError class="error" hidden>Label already exists</div>
+        <div #labelError class="error" role="alert" hidden>Could not save label. Check the name and connection.</div>
       </div>
       <div class="label-list">
-        @for (label of Shared.label.list; track label) {
+        @for (label of Shared.label.list; track label.id ?? label.name) {
           <div class="labels-container">
+            <app-label-color-picker [color]="Shared.labelColor(label)" [label]="label.name" (colorChange)="setLabelColor(label.id!, $event)"></app-label-color-picker>
             <div #labelIcon class="label-icon H" (click)="editLabel(label.id!).delete()"></div>
             <input #labelInput2 (focus)="labelIcon.classList.toggle('trash-icon')"
               (keydown.enter)="labelInput2.blur()"

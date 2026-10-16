@@ -202,7 +202,7 @@
         @for (label of labels; track label) {
           @if (label.added) {
             <div class="label-container">
-              <div class="label"><span>{{label.name}}</span>
+              <div class="label"><span class="label-color-dot" [style.background-color]="Shared.labelColor(label)" aria-hidden="true"></span><span>{{label.name}}</span>
               <div class="cancel-icon" (click)="toggleLabel(label)"></div>
             </div>
           </div>
@@ -1032,6 +1032,7 @@
     @for (label of labels; track label) {
       <div class="label-list" (click)="toggleLabel(label)">
         <div [class.done]='label.added' class="check-icon"></div>
+        <span class="label-color-dot" [style.background-color]="Shared.labelColor(label)" aria-hidden="true"></span>
         <div class="label-name">{{label.name}}</div>
       </div>
     }

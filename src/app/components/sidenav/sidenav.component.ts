@@ -55,9 +55,19 @@ export class NavComponent implements OnInit, OnDestroy {
 
   // ? labels ----------------------------------------------------
 
+  newLabelColor = '#e53935';
+
+  async setLabelColor(id: number, color: string) {
+    try {
+      this.Shared.label.id = id;
+      await this.Shared.label.db.update({ color });
+      this.labelError.nativeElement.hidden = true;
+    } catch { this.labelError.nativeElement.hidden = false; }
+  }
+
   addLabel(el: HTMLInputElement) {
     if (!el) return
-    this.Shared.label.db.add({ name: el.value })
+    this.Shared.label.db.add({ name: el.value, color: this.newLabelColor })
       .then(() => { this.labelError.nativeElement.hidden = true; el.value = ''; el.focus() })
       .catch(x => { if (x.status === 409) this.labelError.nativeElement.hidden = false; el.focus() })
   }
