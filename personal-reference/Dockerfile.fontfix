@@ -1,0 +1,47 @@
+FROM ghcr.io/ericerkz/kept:latest
+
+RUN set -eu; \
+    for css in /app/dist/keep/styles.*.css; do \
+      test -f "$css"; \
+      printf '\n.main-container .title{font-family:Arial,sans-serif!important}\n' >> "$css"; \
+    done
+
+# UUID fallback pro LAN HTTP
+COPY uuid-polyfill.js /app/dist/keep/uuid-polyfill.js
+
+RUN sed -i 's#</head>#<script src="/uuid-polyfill.js"></script></head>#' \
+    /app/dist/keep/index.html
+
+# Vlastní branding Kept
+COPY branding/kept-logo-128.png /app/dist/keep/assets/images/keep2x.fw.png
+COPY branding/favicon.ico /app/dist/keep/favicon.ico
+COPY branding/kept-icon-192.png /app/dist/keep/assets/images/kept-icon-192.png
+COPY branding/kept-icon-512.png /app/dist/keep/assets/images/kept-icon-512.png
+COPY branding/kept-icon-180.png /app/dist/keep/assets/images/kept-icon-180.png
+
+# Samostatná Apple touch ikona 180x180
+RUN sed -i 's#sizes="180x180" href="/assets/images/kept-icon-192.png"#sizes="180x180" href="/assets/images/kept-icon-180.png"#' /app/dist/keep/index.html
+
+# Moderní oranžový nápis Kept v horní liště
+RUN set -eu; \
+    for css in /app/dist/keep/styles.*.css; do \
+      test -f "$css"; \
+      printf '%s\n' '.main-container .navbar .first-col .text{color:#FFA726!important;font-family:Arial,Helvetica,sans-serif!important;font-size:26px!important;font-weight:600!important;line-height:1.2!important;top:0!important;text-shadow:none!important;letter-spacing:0!important}' >> "$css"; \
+    done
+
+# Sjednocení původní světle žluté akcentní barvy s logem
+RUN set -eu; \
+    for f in /app/dist/keep/*.js \
+             /app/dist/keep/*.css \
+             /app/dist/keep/*.html \
+             /app/dist/keep/*.webmanifest; do \
+      [ -f "$f" ] || continue; \
+      sed -i 's/#feefc3/#FFA726/g;s/#FEEFC3/#FFA726/g' "$f"; \
+    done
+
+# Ceska diakritika v editoru novych i existujicich poznamek
+RUN set -eu; \
+    for css in /app/dist/keep/styles.*.css; do \
+      test -f "$css"; \
+      printf '\n.note-main .note-title{font-family:Arial,Helvetica,sans-serif!important}\n' >> "$css"; \
+    done
